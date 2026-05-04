@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>BACORD — Reunión de Diagnóstico</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0A2D63; --navy2:#071e43; --orange:#FF6B35; --yellow:#FFDF64;
+  --green:#2D5D4A; --lightblue:#A9D7E0; --paleblue:#E3F6F9;
+  --white:#FFFFFF; --off:#F4F6FA; --text:#0A2D63; --text2:#3a5080; --text3:#7a8fad;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;background:var(--navy2)}
+
+/* ── SLIDE ENGINE ── */
+.slides{width:100%;height:100vh;position:relative}
+.slide{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .45s ease,transform .45s ease;transform:translateY(18px);overflow:hidden}
+.slide.active{opacity:1;pointer-events:all;transform:translateY(0)}
+.slide.exit{opacity:0;transform:translateY(-18px)}
+
+/* ── GLOBAL LAYOUT FIXES ── */
+/* Ensure all slide panels don't overflow viewport */
+.s-cover,.s-what,.s-cost,.s-diag,.s-action,.s-demo,.s-close{
+  width:100%;
+  height:100vh;
+  max-height:100vh;
+  max-width:100vw;
+  overflow:hidden;
+}
+
+/* Scrollable side panels when content is tall */
+.what-right,.diag-right,.demo-right,.close-right,.what-left,.diag-left,.demo-left,.close-left{
+  overflow-y:auto;
+  overflow-x:hidden;
+}
+
+/* Clamp padding on very small screens */
+@media (max-height: 700px) {
+  .s-cover{padding:40px 60px 80px !important}
+  .what-left,.what-right,.diag-left,.diag-right,.demo-left,.demo-right,.close-left,.close-right{padding-top:32px !important;padding-bottom:80px !important}
+  .action-top{padding:24px 48px 14px !important}
+  .ba-wrap{padding:0 48px 80px !important}
+  .cost-question{margin-bottom:24px}
+  .cost-grid{gap:10px}
+  .cost-card{padding:20px 18px}
+  .cost-num{font-size:32px}
+}
+
+/* Tablet/Medium screens */
+@media (max-width: 1024px) {
+  .s-what,.s-diag,.s-demo,.s-close{grid-template-columns:1fr !important}
+  .what-left,.diag-left,.demo-left,.close-left{padding:40px 28px 24px !important}
+  .what-right,.diag-right,.demo-right,.close-right{padding:28px 28px 80px !important}
+  .s-cover{padding:40px 32px 80px !important}
+  .c-h1{font-size:clamp(30px,6vw,52px)}
+  .ba-wrap{padding:0 28px 80px !important;grid-template-columns:1fr !important}
+  .action-top{padding:28px 28px 14px !important}
+  .ba-arrow{display:none !important}
+  .cost-grid{grid-template-columns:1fr !important}
+  .s-cost{padding:40px 28px 80px !important}
+  .pain-grid{grid-template-columns:1fr}
+}
+
+/* Mobile screens */
+@media (max-width: 640px) {
+  .s-cover{padding:30px 20px 60px !important}
+  .c-h1{font-size:clamp(24px,5vw,36px)}
+  .c-logo img{height:35px}
+  .c-client-row{flex-direction:column;gap:20px !important;margin-top:40px !important}
+  
+  .what-left,.diag-left,.demo-left,.close-left{padding:24px 16px 20px !important}
+  .what-right,.diag-right,.demo-right,.close-right{padding:16px 16px 60px !important}
+  
+  .w-title{font-size:clamp(20px,4vw,28px)}
+  .dr-title,.cr-title{font-size:16px}
+  
+  .s-cost{padding:30px 16px 60px !important}
+  .cost-question{font-size:clamp(22px,3.5vw,32px);margin-bottom:32px}
+  .cost-grid{grid-template-columns:1fr !important;gap:12px}
+  .cost-card{padding:20px 16px}
+  .cost-num{font-size:28px}
+  
+  .action-top{padding:20px 16px 12px !important}
+  .a-title{font-size:clamp(20px,3vw,28px)}
+  .ba-wrap{padding:0 16px 60px !important}
+  .ba-col{padding:14px}
+  .ba-col.before{margin-right:6px}
+  .ba-col.after{margin-left:6px}
+  
+  .pt-panel{width:240px;right:10px;top:45px}
+  .nav{bottom:16px;left:50%;gap:8px;padding:8px 12px}
+  .nav-btn{width:28px;height:28px;font-size:13px}
+  .nav-dots{gap:4px}
+  .nav-dot{width:4px;height:4px}
+  .nav-dot.active{width:12px}
+  .nav-timer{font-size:9px;padding-left:6px}
+}
+
+/* Very small phones */
+@media (max-width: 360px) {
+  .c-h1{font-size:clamp(20px,5vw,28px)}
+  .c-client-input{font-size:16px;min-width:auto}
+  .cost-question{font-size:clamp(18px,3vw,26px)}
+  .pt-panel{width:200px;font-size:10px}
+}
+
+/* ── NAV ── */
+.nav{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:14px;background:rgba(10,45,99,.88);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.1);border-radius:100px;padding:9px 18px;z-index:1000}
+.nav-btn{width:34px;height:34px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:all .2s;background:rgba(255,255,255,.07);color:white}
+.nav-btn:hover{background:var(--orange)}
+.nav-btn:disabled{opacity:.25;cursor:not-allowed;background:transparent}
+.nav-dots{display:flex;gap:6px;align-items:center}
+.nav-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.22);cursor:pointer;transition:all .2s;border:none;padding:0}
+.nav-dot.active{background:var(--orange);width:18px;border-radius:3px}
+.nav-timer{font-family:'DM Mono',monospace;font-size:11px;color:rgba(255,255,255,.3);padding-left:8px;border-left:1px solid rgba(255,255,255,.1)}
+
+/* ── PRESENTER ── */
+.pt-toggle{position:fixed;top:18px;right:18px;z-index:1000;background:rgba(10,45,99,.9);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.45);font-size:11px;font-family:'DM Mono',monospace;padding:5px 12px;border-radius:20px;cursor:pointer;letter-spacing:.06em;transition:all .2s}
+.pt-toggle:hover{color:white;border-color:var(--orange)}
+.pt-toggle.on{color:var(--orange);border-color:var(--orange)}
+.pt-panel{position:fixed;right:18px;top:55px;width:290px;background:rgba(7,30,67,.97);backdrop-filter:blur(20px);border:1px solid rgba(255,107,53,.28);border-radius:14px;padding:18px;z-index:999;display:none;box-shadow:0 20px 50px rgba(0,0,0,.5);max-height:calc(100vh - 100px);overflow-y:auto}
+.pt-panel.visible{display:block}
+.pt-panel h4{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;color:var(--orange);text-transform:uppercase;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(255,107,53,.18)}
+.pt-tip{font-size:12px;line-height:1.6;color:rgba(255,255,255,.65);margin-bottom:8px;padding-left:10px;border-left:2px solid rgba(255,107,53,.35)}
+.pt-q{background:rgba(255,107,53,.07);border-radius:7px;padding:8px 10px;margin-bottom:5px;font-size:12px;color:rgba(255,255,255,.75);line-height:1.5}
+.pt-q::before{content:"❓ "}
+.pt-badge{display:inline-block;font-family:'DM Mono',monospace;font-size:10px;color:var(--orange);background:rgba(255,107,53,.1);border:1px solid rgba(255,107,53,.18);padding:2px 8px;border-radius:10px;margin-bottom:10px}
+
+/* ── ANIMATIONS ── */
+.slide.active .ai{animation:slideUp .55s ease forwards}
+.ai{opacity:0;transform:translateY(20px)}
+.d1{animation-delay:.1s}.d2{animation-delay:.2s}.d3{animation-delay:.3s}
+.d4{animation-delay:.4s}.d5{animation-delay:.5s}.d6{animation-delay:.6s}
+@keyframes slideUp{to{opacity:1;transform:translateY(0)}}
+
+/* ═══════════════════════════════════════════
+   SLIDE 0 — PORTADA
+═══════════════════════════════════════════ */
+.s-cover{background:var(--navy);display:flex;flex-direction:column;justify-content:center;align-items:flex-start;padding:80px 80px 100px;position:relative;overflow:hidden}
+.cover-rings{position:absolute;right:-100px;top:50%;transform:translateY(-50%);width:680px;height:680px;opacity:.055}
+.cover-rings circle{fill:none;stroke:white}
+.c-logo{margin-bottom:56px}
+.c-logo img{height:50px}
+.c-tag{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.12em;color:var(--orange);text-transform:uppercase;margin-bottom:18px;display:flex;align-items:center;gap:8px}
+.c-tag::before{content:'';width:22px;height:1px;background:var(--orange)}
+.c-h1{font-family:'Syne',sans-serif;font-size:clamp(40px,5.5vw,70px);font-weight:800;line-height:1.0;color:white;margin-bottom:22px;max-width:660px;letter-spacing:-.025em}
+.c-h1 span{color:var(--orange)}
+.c-sub{font-size:17px;color:rgba(255,255,255,.45);font-weight:300;max-width:460px;line-height:1.65}
+.c-client-row{display:flex;align-items:flex-end;gap:40px;margin-top:60px;padding-top:30px;border-top:1px solid rgba(255,255,255,.08)}
+.c-client-label{font-size:11px;color:rgba(255,255,255,.3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:5px}
+.c-client-input{background:transparent;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:20px;font-weight:500;color:white;min-width:220px;border-bottom:1px solid rgba(255,255,255,.15);padding:4px 0}
+.c-client-input::placeholder{color:rgba(255,255,255,.2)}
+.c-date{font-size:12px;color:rgba(255,255,255,.2);margin-top:5px}
+
+/* ═══════════════════════════════════════════
+   SLIDE 1 — QUÉ ES BACORD
+═══════════════════════════════════════════ */
+.s-what{background:var(--off);display:grid;grid-template-columns:1fr 1.1fr}
+.what-left{background:var(--navy);padding:64px 56px 100px;display:flex;flex-direction:column;justify-content:center;position:relative;overflow-y:auto;overflow-x:hidden}
+.what-left::after{content:'';position:absolute;bottom:-80px;right:-80px;width:320px;height:320px;background:radial-gradient(circle,rgba(255,107,53,.12) 0%,transparent 70%)}
+.w-eyebrow{font-family:'DM Mono',monospace;font-size:11px;color:var(--orange);letter-spacing:.1em;margin-bottom:16px}
+.w-title{font-family:'Syne',sans-serif;font-size:clamp(26px,3vw,42px);font-weight:800;color:white;line-height:1.1;margin-bottom:20px}
+.w-title span{color:var(--yellow)}
+.w-def{font-size:15px;color:rgba(255,255,255,.6);line-height:1.75;max-width:380px;margin-bottom:32px}
+.w-pillars{display:flex;flex-direction:column;gap:12px}
+.w-pillar{display:flex;gap:14px;align-items:flex-start;padding:14px 16px;background:rgba(255,255,255,.05);border-radius:10px;border-left:3px solid var(--orange)}
+.w-pillar-icon{font-size:20px;flex-shrink:0;margin-top:1px}
+.w-pillar-text{}
+.w-pillar-title{font-size:13px;font-weight:600;color:white;margin-bottom:3px}
+.w-pillar-desc{font-size:12px;color:rgba(255,255,255,.5);line-height:1.5}
+
+.what-right{padding:56px 52px 100px;display:flex;flex-direction:column;justify-content:center;gap:14px;overflow-y:auto;overflow-x:hidden}
+.w-r-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:var(--navy);margin-bottom:4px}
+.w-r-sub{font-size:13px;color:var(--text3);margin-bottom:8px}
+.w-feat{background:white;border-radius:14px;padding:20px 24px;box-shadow:0 3px 16px rgba(10,45,99,.07);display:flex;gap:16px;align-items:flex-start;border-left:4px solid}
+.w-feat.f1{border-color:var(--orange)}
+.w-feat.f2{border-color:var(--navy)}
+.w-feat.f3{border-color:var(--yellow)}
+.w-feat.f4{border-color:var(--lightblue)}
+.w-feat-icon{font-size:22px;flex-shrink:0;margin-top:2px}
+.w-feat-title{font-size:14px;font-weight:600;color:var(--navy);margin-bottom:4px}
+.w-feat-desc{font-size:12px;color:var(--text2);line-height:1.55}
+.w-who{background:var(--navy);border-radius:14px;padding:18px 22px;display:flex;gap:20px;align-items:center;margin-top:4px}
+.w-who-text{font-size:13px;color:rgba(255,255,255,.7);line-height:1.5}
+.w-who-text strong{color:white;display:block;margin-bottom:2px}
+
+/* ═══════════════════════════════════════════
+   SLIDE 2 — EL COSTO (más punch)
+═══════════════════════════════════════════ */
+.s-cost{background:var(--navy);display:flex;flex-direction:column;justify-content:center;align-items:center;padding:64px 80px 100px;position:relative;overflow-y:auto;overflow-x:hidden}
+.cost-bg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:.03;pointer-events:none}
+.cost-bg-txt{font-family:'Syne',sans-serif;font-size:28vw;font-weight:800;color:white;white-space:nowrap;letter-spacing:-.05em}
+.cost-eyebrow{font-family:'DM Mono',monospace;font-size:11px;color:var(--orange);letter-spacing:.1em;margin-bottom:14px;text-align:center}
+.cost-question{font-family:'Syne',sans-serif;font-size:clamp(30px,4vw,52px);font-weight:800;color:white;text-align:center;line-height:1.05;margin-bottom:48px;max-width:720px}
+.cost-question span{color:var(--yellow)}
+.cost-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;width:100%;max-width:860px}
+.cost-card{border-radius:16px;padding:32px 28px;position:relative;overflow:hidden}
+.cost-card.c1{background:rgba(255,107,53,.12);border:1px solid rgba(255,107,53,.25)}
+.cost-card.c2{background:rgba(255,223,100,.07);border:1px solid rgba(255,223,100,.2)}
+.cost-card.c3{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1)}
+.cost-num{font-family:'Syne',sans-serif;font-size:42px;font-weight:800;line-height:1;margin-bottom:10px}
+.c1 .cost-num{color:var(--orange)}
+.c2 .cost-num{color:var(--yellow)}
+.c3 .cost-num{color:rgba(255,255,255,.7)}
+.cost-label{font-size:14px;color:rgba(255,255,255,.7);line-height:1.4;margin-bottom:6px}
+.cost-sub{font-size:12px;color:rgba(255,255,255,.3);line-height:1.5}
+
+/* ═══════════════════════════════════════════
+   SLIDE 3 — DIAGNÓSTICO INTERACTIVO
+═══════════════════════════════════════════ */
+.s-diag{background:var(--off);display:grid;grid-template-columns:1fr 1.2fr}
+.diag-left{background:var(--navy);padding:52px 44px 100px;display:flex;flex-direction:column;position:relative;overflow-y:auto;overflow-x:hidden}
+.diag-grid-bg{position:absolute;inset:0;opacity:.025;background:repeating-linear-gradient(0deg,transparent,transparent 40px,rgba(255,255,255,.6) 40px,rgba(255,255,255,.6) 41px),repeating-linear-gradient(90deg,transparent,transparent 40px,rgba(255,255,255,.6) 40px,rgba(255,255,255,.6) 41px)}
+.d-eyebrow{font-family:'DM Mono',monospace;font-size:11px;color:var(--orange);letter-spacing:.1em;margin-bottom:14px}
+.d-title{font-family:'Syne',sans-serif;font-size:clamp(20px,2.4vw,30px);font-weight:800;color:white;line-height:1.15;margin-bottom:14px}
+.d-intro{font-size:13px;color:rgba(255,255,255,.45);line-height:1.65;margin-bottom:24px}
+.proc-steps{display:flex;flex-direction:column;gap:0;flex:1}
+.ps{display:flex;gap:14px;align-items:flex-start;padding:12px 10px;border-bottom:1px solid rgba(255,255,255,.06);cursor:pointer;transition:all .2s;border-radius:8px;margin:0 -6px}
+.ps:hover{background:rgba(255,255,255,.04)}
+.ps.flagged{background:rgba(255,107,53,.1);border-bottom-color:transparent}
+.ps-num{width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:11px;background:rgba(255,255,255,.07);color:rgba(255,255,255,.4);border:1px solid rgba(255,255,255,.09);transition:all .2s}
+.ps.flagged .ps-num{background:var(--orange);color:white;border-color:var(--orange)}
+.ps-text{font-size:13px;color:rgba(255,255,255,.65);line-height:1.45}
+.ps-text strong{color:white;display:block;margin-bottom:1px;font-size:13px}
+.ps-flag{margin-left:auto;font-size:10px;padding:2px 8px;background:var(--orange);color:white;border-radius:6px;font-weight:500;flex-shrink:0;align-self:center;opacity:0;transition:opacity .2s;white-space:nowrap}
+.ps.flagged .ps-flag{opacity:1}
+.d-tip{margin-top:12px;font-size:11px;color:rgba(255,255,255,.25);font-style:italic}
+
+.diag-right{padding:52px 44px 100px;display:flex;flex-direction:column;gap:14px;overflow-y:auto;overflow-x:hidden}
+.dr-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:var(--navy);margin-bottom:2px}
+.dr-sub{font-size:12px;color:var(--text3);margin-bottom:6px}
+.risk-box{background:white;border-radius:14px;padding:20px 24px;box-shadow:0 3px 16px rgba(10,45,99,.07)}
+.risk-lbl{font-size:11px;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px;font-family:'DM Mono',monospace}
+.risk-bar{height:10px;background:var(--paleblue);border-radius:5px;overflow:hidden}
+.risk-fill{height:100%;border-radius:5px;background:linear-gradient(90deg,#4AE68A,var(--yellow),var(--orange));transition:width .8s cubic-bezier(.4,0,.2,1);width:12%}
+.risk-val{font-family:'Syne',sans-serif;font-size:26px;font-weight:700;color:var(--navy);margin-top:8px}
+.risk-val span{font-size:13px;font-weight:400;color:var(--text3)}
+.pain-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pain-card{background:white;border-radius:12px;padding:16px 18px;box-shadow:0 2px 10px rgba(10,45,99,.06);cursor:pointer;transition:all .2s;border:2px solid transparent}
+.pain-card:hover{border-color:var(--lightblue);transform:translateY(-2px)}
+.pain-card.active{border-color:var(--orange);background:#fff9f6}
+.pain-emoji{font-size:18px;margin-bottom:6px}
+.pain-title{font-size:13px;font-weight:600;color:var(--navy);margin-bottom:3px}
+.pain-desc{font-size:11px;color:var(--text2);line-height:1.5}
+.pain-impact{display:none;font-size:11px;margin-top:7px;padding:5px 8px;background:rgba(255,107,53,.08);border-radius:6px;color:var(--orange);font-weight:500}
+.pain-card.active .pain-impact{display:block}
+
+/* ═══════════════════════════════════════════
+   SLIDE 4 — BACORD EN ACCIÓN
+═══════════════════════════════════════════ */
+.s-action{background:var(--navy);display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden}
+.action-top{padding:44px 72px 28px;flex-shrink:0}
+.a-eyebrow{font-family:'DM Mono',monospace;font-size:11px;color:var(--orange);letter-spacing:.1em;margin-bottom:10px}
+.a-title{font-family:'Syne',sans-serif;font-size:clamp(26px,3.5vw,46px);font-weight:800;color:white;line-height:1.05;margin-bottom:6px}
+.a-title span{color:var(--yellow)}
+.a-sub{font-size:14px;color:rgba(255,255,255,.4)}
+.ba-wrap{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:0;padding:0 72px 100px;min-height:0;position:relative}
+.ba-col{display:flex;flex-direction:column;gap:10px;padding:22px;border-radius:16px}
+.ba-col.before{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);margin-right:14px}
+.ba-col.after{background:rgba(255,107,53,.07);border:1px solid rgba(255,107,53,.18);margin-left:14px}
+.ba-tag{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.08em;padding:3px 10px;border-radius:20px;font-weight:500;margin-bottom:4px;display:inline-block}
+.before .ba-tag{background:rgba(255,255,255,.08);color:rgba(255,255,255,.35)}
+.after .ba-tag{background:rgba(255,107,53,.2);color:var(--orange)}
+.ba-item{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:10px;background:rgba(255,255,255,.03)}
+.ba-icon{font-size:15px;flex-shrink:0;margin-top:1px}
+.ba-text{font-size:13px;line-height:1.45}
+.before .ba-text{color:rgba(255,255,255,.45)}
+.after .ba-text{color:rgba(255,255,255,.82)}
+.ba-time{font-family:'DM Mono',monospace;font-size:11px;margin-top:4px}
+.before .ba-time{color:rgba(255,107,53,.55)}
+.after .ba-time{color:#4AE68A}
+.ba-arrow{position:absolute;left:50%;top:50%;transform:translate(-50%,-60%);width:44px;height:44px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:white;box-shadow:0 0 0 10px rgba(255,107,53,.12);z-index:10}
+
+/* ═══════════════════════════════════════════
+   SLIDE 5 — DEMO PRIMERO
+═══════════════════════════════════════════ */
+.s-demo{background:var(--off);display:grid;grid-template-columns:1fr 1fr}
+.demo-left{background:var(--navy);padding:64px 56px 100px;display:flex;flex-direction:column;justify-content:center;position:relative;overflow-y:auto;overflow-x:hidden}
+.demo-left::before{content:'';position:absolute;top:-100px;left:-100px;width:400px;height:400px;background:radial-gradient(circle,rgba(255,223,100,.06) 0%,transparent 70%)}
+.dm-eyebrow{font-family:'DM Mono',monospace;font-size:11px;color:var(--orange);letter-spacing:.1em;margin-bottom:16px}
+.dm-title{font-family:'Syne',sans-serif;font-size:clamp(28px,3.2vw,44px);font-weight:800;color:white;line-height:1.05;margin-bottom:18px}
+.dm-title span{color:var(--yellow)}
+.dm-desc{font-size:15px;color:rgba(255,255,255,.55);line-height:1.7;max-width:380px;margin-bottom:36px}
+.dm-flow{display:flex;flex-direction:column;gap:0}
+.dm-step{display:flex;gap:16px;align-items:flex-start;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.07)}
+.dm-step:last-child{border-bottom:none}
+.dm-step-num{width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,107,53,.35);background:rgba(255,107,53,.08);color:var(--orange);font-family:'DM Mono',monospace;font-size:12px;font-weight:500;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.dm-step-text{}
+.dm-step-title{font-size:14px;font-weight:600;color:white;margin-bottom:3px}
+.dm-step-desc{font-size:12px;color:rgba(255,255,255,.45);line-height:1.5}
+
+.demo-right{padding:56px 52px 100px;display:flex;flex-direction:column;justify-content:center;gap:16px;overflow-y:auto;overflow-x:hidden}
+.dr2-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:var(--navy);margin-bottom:4px}
+.dr2-sub{font-size:13px;color:var(--text3);margin-bottom:12px}
+.demo-card{background:white;border-radius:16px;padding:24px 28px;box-shadow:0 4px 20px rgba(10,45,99,.08);border-left:4px solid;margin-bottom:10px}
+.demo-card.dc1{border-color:var(--orange)}
+.demo-card.dc2{border-color:#4AE68A}
+.demo-card.dc3{border-color:var(--navy)}
+.dc-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;font-family:'DM Mono',monospace}
+.dc-title{font-size:15px;font-weight:600;color:var(--navy);margin-bottom:6px}
+.dc-desc{font-size:13px;color:var(--text2);line-height:1.55}
+.demo-objection{background:var(--navy);border-radius:14px;padding:20px 24px;display:flex;gap:16px;align-items:flex-start}
+.obj-icon{font-size:20px;flex-shrink:0;margin-top:2px}
+.obj-body{}
+.obj-q{font-size:13px;color:rgba(255,255,255,.45);font-style:italic;margin-bottom:6px}
+.obj-a{font-size:14px;color:rgba(255,255,255,.8);line-height:1.55}
+.obj-a strong{color:var(--yellow)}
+
+/* ═══════════════════════════════════════════
+   SLIDE 6 — CIERRE
+═══════════════════════════════════════════ */
+.s-close{background:var(--off);display:grid;grid-template-columns:1fr 1fr}
+.close-left{background:var(--navy);padding:72px 56px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow-y:auto;overflow-x:hidden}
+.close-left::after{content:'';position:absolute;bottom:-100px;right:-100px;width:350px;height:350px;background:radial-gradient(circle,rgba(255,107,53,.1) 0%,transparent 70%)}
+.cl-logo img{height:42px}
+.cl-main{flex:1;display:flex;flex-direction:column;justify-content:center}
+.cl-eyebrow{font-family:'DM Mono',monospace;font-size:11px;color:var(--orange);letter-spacing:.1em;margin-bottom:14px}
+.cl-title{font-family:'Syne',sans-serif;font-size:clamp(26px,3vw,40px);font-weight:800;color:white;line-height:1.1;margin-bottom:18px}
+.cl-title span{color:var(--yellow)}
+.cl-sub{font-size:15px;color:rgba(255,255,255,.42);line-height:1.65;max-width:360px}
+.cl-contacts{display:flex;flex-direction:column;gap:10px}
+.cl-contact{font-size:13px;color:rgba(255,255,255,.4)}
+.cl-contact strong{color:rgba(255,255,255,.8);display:block}
+
+.close-right{padding:56px;display:flex;flex-direction:column;justify-content:center;gap:14px;overflow-y:auto;overflow-x:hidden}
+.cr-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:var(--navy);margin-bottom:4px}
+.cr-sub{font-size:13px;color:var(--text3);margin-bottom:10px}
+.ns-card{background:white;border-radius:12px;padding:18px 22px;box-shadow:0 2px 12px rgba(10,45,99,.06);border-left:3px solid;margin-bottom:8px}
+.ns-card.o{border-color:var(--orange)}
+.ns-card.g{border-color:#4AE68A}
+.ns-card.b{border-color:var(--navy)}
+.ns-card.t{border-color:var(--text3)}
+.ns-lbl{font-size:11px;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px}
+.ns-input{width:100%;background:transparent;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;color:var(--navy);padding:3px 0;border-bottom:1px solid var(--paleblue)}
+.ns-input::placeholder{color:var(--text3);font-weight:300}
+</style>
+</head>
+<body>
+
+<button class="pt-toggle" id="ptToggle" onclick="togglePresenter()">MODO VENDEDOR</button>
+<div class="pt-panel" id="ptPanel"></div>
+
+<div class="slides" id="slides">
+
+<!-- ═══ SLIDE 0: PORTADA ═══ -->
+<div class="slide active" data-slide="0">
+  <div class="s-cover">
+    <svg class="cover-rings" viewBox="0 0 680 680" xmlns="http://www.w3.org/2000/svg">
+      <line x1="340" y1="0" x2="340" y2="680" stroke="white" stroke-width="0.5" opacity="0.4"/>
+      <circle cx="340" cy="340" r="55"/><circle cx="340" cy="340" r="95"/>
+      <circle cx="340" cy="340" r="145"/><circle cx="340" cy="340" r="200"/>
+    </svg>
+    <div class="c-logo ai d1"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 60'%3E%3Ctext x='10' y='45' font-family='Syne,sans-serif' font-size='40' font-weight='800' fill='%23FF6B35'%3EBACORD%3C/text%3E%3C/svg%3E" alt="BACORD"></div>
+    <div class="c-tag ai d2">→ solución integrada</div>
+    <h1 class="c-h1 ai d3">Trazabilidad digital<br>con <span>riesgo en tiempo real</span></h1>
+    <p class="c-sub ai d4">Los datos que necesita el piso de producción. La trazabilidad que necesita Asuntos Regulatorios. Un solo lugar, conectado a lo que ya tienen.</p>
+    <div class="c-client-row">
+      <div>
+        <div class="c-client-label">Cliente</div>
+        <input type="text" id="coverClient" class="c-client-input" placeholder="Nombre de la empresa" readonly style="cursor:default">
+      </div>
+      <div>
+        <div class="c-client-label">Fecha</div>
+        <div class="c-date" id="coverDate"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 1: QUÉ ES BACORD ═══ -->
+<div class="slide" data-slide="1">
+  <div class="s-what">
+    <div class="what-left">
+      <div class="w-eyebrow ai d1">¿qué es?</div>
+      <h2 class="w-title ai d2">BACORD es una <span>plataforma digital</span> para producción con traza.</h2>
+      <p class="w-def ai d3">No reemplaza tu ERP. Se sienta encima: conecta el piso con los sistemas, documenta en vivo lo que pasa, expone riesgos antes de que se conviertan en problemas.</p>
+      <div class="w-pillars ai d4">
+        <div class="w-pillar">
+          <div class="w-pillar-icon">📊</div>
+          <div class="w-pillar-text"><strong class="w-pillar-title">Integrada</strong><div class="w-pillar-desc">Se conecta a tu ERP y equipos. Sin dobles digitaciones.</div></div>
+        </div>
+        <div class="w-pillar">
+          <div class="w-pillar-icon">⚡</div>
+          <div class="w-pillar-text"><strong class="w-pillar-title">En tiempo real</strong><div class="w-pillar-desc">Desviaciones, alertas, firmas — al instante en la pantalla.</div></div>
+        </div>
+        <div class="w-pillar">
+          <div class="w-pillar-icon">✅</div>
+          <div class="w-pillar-text"><strong class="w-pillar-title">Regulatoria</strong><div class="w-pillar-desc">BPM, INVIMA, ISO — documentación completa desde el primer segundo.</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="what-right">
+      <div>
+        <div class="w-r-title ai d1">Capacidades</div>
+        <div class="w-r-sub ai d2">Lo que BACORD hace hoy</div>
+      </div>
+      <div class="w-feat f1 ai d3">
+        <div class="w-feat-icon">🔗</div>
+        <div><strong class="w-feat-title">Integración profunda</strong><div class="w-feat-desc">ERP, Instrumentos, Báscula, Cámara, SCADA — hablamos su lenguaje.</div></div>
+      </div>
+      <div class="w-feat f2 ai d4">
+        <div class="w-feat-icon">📝</div>
+        <div><strong class="w-feat-title">Registro digital de lotes</strong><div class="w-feat-desc">Automático desde el ERP + manual si es necesario. Con firma y trazabilidad.</div></div>
+      </div>
+      <div class="w-feat f3 ai d5">
+        <div class="w-feat-icon">🚨</div>
+        <div><strong class="w-feat-title">Alertas en vivo</strong><div class="w-feat-desc">Temperatura fuera de rango, parámetro desviado, documentación incompleta — ves todo.</div></div>
+      </div>
+      <div class="w-feat f4 ai d6">
+        <div class="w-feat-icon">📦</div>
+        <div><strong class="w-feat-title">Trazabilidad producto a equipo</strong><div class="w-feat-desc">Quién, cuándo, dónde, cómo. Para auditoría, recall, decisiones.</div></div>
+      </div>
+      <div class="w-who ai d6">
+        <div class="w-who-text"><strong>¿Para quiénes?</strong>Farmacéutica, cosmética, alimentos, químicos. Con procesos documentados y estándares regulatorios.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 2: EL COSTO ═══ -->
+<div class="slide" data-slide="2">
+  <div class="s-cost">
+    <div class="cost-bg"><div class="cost-bg-txt">$</div></div>
+    <div class="cost-eyebrow ai d1">inversión</div>
+    <h2 class="cost-question ai d2">¿Cuánto les cuesta<br><span>lo que hace BACORD hoy?</span></h2>
+    <div class="cost-grid ai d3">
+      <div class="cost-card c1">
+        <div class="cost-num">3×</div>
+        <div class="cost-label">Más rápido</div>
+        <div class="cost-sub">cerrar documentación de un lote vs manual</div>
+      </div>
+      <div class="cost-card c2">
+        <div class="cost-num">80%</div>
+        <div class="cost-label">Menos</div>
+        <div class="cost-sub">desviaciones tardías encontradas en auditoría</div>
+      </div>
+      <div class="cost-card c3">
+        <div class="cost-num">0</div>
+        <div class="cost-label">Dobles digitaciones</div>
+        <div class="cost-sub">una vez que está integrado con tu ERP</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 3: DIAGNÓSTICO INTERACTIVO ═══ -->
+<div class="slide" data-slide="3">
+  <div class="s-diag">
+    <div class="diag-left">
+      <div class="diag-grid-bg"></div>
+      <div class="d-eyebrow ai d1">pasemos a hechos</div>
+      <h2 class="d-title ai d2">¿Cómo estan hoy?</h2>
+      <p class="d-intro ai d3">Haz clic en cada paso. Tu riesgo real se ve acá abajo →</p>
+      <div class="proc-steps ai d4">
+        <div class="ps" onclick="toggleStep(this)"><div class="ps-num">1</div><div class="ps-text"><strong>Producción inicia</strong>Sin conexión con el ERP — genera su propio registro</div><div class="ps-flag">⚠ Riesgo</div></div>
+        <div class="ps" onclick="toggleStep(this)"><div class="ps-num">2</div><div class="ps-text"><strong>Parámetros se registran</strong>Manual o de un sensor — sin validación en tiempo real</div><div class="ps-flag">⚠ Riesgo</div></div>
+        <div class="ps" onclick="toggleStep(this)"><div class="ps-num">3</div><div class="ps-text"><strong>Se detecta una desviación</strong>QA se da cuenta, pero esto pasa a los 3 días en auditoría</div><div class="ps-flag">⚠ Riesgo</div></div>
+        <div class="ps" onclick="toggleStep(this)"><div class="ps-num">4</div><div class="ps-text"><strong>Requiere firma de aprobación</strong>El gerente de calidad no está en planta — espera por email</div><div class="ps-flag">⚠ Riesgo</div></div>
+        <div class="ps" onclick="toggleStep(this)"><div class="ps-num">5</div><div class="ps-text"><strong>Cierre de lote en ERP</strong>Alguien retranscribe lo que pasó en el papel/excel</div><div class="ps-flag">⚠ Riesgo</div></div>
+      </div>
+      <div class="d-tip ai d5">💡 Haz clic en los pasos para ver cómo sube el riesgo</div>
+    </div>
+    <div class="diag-right">
+      <div>
+        <div class="dr-title ai d1">Tu riesgo regulatorio</div>
+        <div class="dr-sub ai d2">Según lo que acabas de contar</div>
+      </div>
+      <div class="risk-box ai d3">
+        <div class="risk-lbl">Riesgo identificado</div>
+        <div class="risk-bar"><div class="risk-fill" id="riskFill"></div></div>
+        <div class="risk-val" id="riskVal">Bajo <span>— sin puntos críticos identificados</span></div>
+      </div>
+      <div>
+        <div class="dr-title ai d4">¿Dónde duele?</div>
+        <div class="dr-sub ai d5">Selecciona lo que más les afecta</div>
+      </div>
+      <div class="pain-grid ai d6">
+        <div class="pain-card" onclick="togglePain(this)">
+          <div class="pain-emoji">⏱️</div>
+          <div class="pain-title">Tiempo</div>
+          <div class="pain-desc">Cerrar documentos toma demasiadas horas</div>
+          <div class="pain-impact">Multiplica el riesgo: tardío = tarío descubrimiento</div>
+        </div>
+        <div class="pain-card" onclick="togglePain(this)">
+          <div class="pain-emoji">❌</div>
+          <div class="pain-title">Errores</div>
+          <div class="pain-desc">Las desviaciones no se ven en el momento</div>
+          <div class="pain-impact">Observación segura en la próxima auditoría</div>
+        </div>
+        <div class="pain-card" onclick="togglePain(this)">
+          <div class="pain-emoji">🔄</div>
+          <div class="pain-title">Reproceso</div>
+          <div class="pain-desc">Retranscribir datos es manual y propenso a errores</div>
+          <div class="pain-impact">Aumenta costo y reduce precisión</div>
+        </div>
+        <div class="pain-card" onclick="togglePain(this)">
+          <div class="pain-emoji">🔐</div>
+          <div class="pain-title">Auditoría</div>
+          <div class="pain-desc">No hay trazabilidad clara de quién qué cuándo</div>
+          <div class="pain-impact">Obligado a crear documentación retrospectiva</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 4: BACORD EN ACCIÓN ═══ -->
+<div class="slide" data-slide="4">
+  <div class="action-top">
+    <div class="a-eyebrow ai d1">solución</div>
+    <h2 class="a-title ai d2">Así lo <span>resuelve BACORD</span></h2>
+    <p class="a-sub ai d3">Con los mismos pasos, pero conectados. Sin dobles registros. Con visibilidad en vivo.</p>
+  </div>
+  <div class="ba-wrap">
+    <div class="ba-col before">
+      <div class="ba-tag">HOY (con papel/Excel)</div>
+      <div class="ba-item ai d4"><div class="ba-icon">📋</div><div><div class="ba-text"><strong>Registro manual</strong>Producción llena papel</div><div class="ba-time">~15 min</div></div></div>
+      <div class="ba-item ai d4"><div class="ba-icon">✍️</div><div><div class="ba-text"><strong>Parámetros desconectados</strong>Anotación manual + sensor independiente</div><div class="ba-time">~5 min + error</div></div></div>
+      <div class="ba-item ai d4"><div class="ba-icon">🔍</div><div><div class="ba-text"><strong>Desviación no visible</strong>Se detecta en revisión (días después)</div><div class="ba-time">+3 días</div></div></div>
+      <div class="ba-item ai d4"><div class="ba-icon">📧</div><div><div class="ba-text"><strong>Espera de firma</strong>Email → respuesta tardía</div><div class="ba-time">+4 horas</div></div></div>
+      <div class="ba-item ai d4"><div class="ba-icon">📝</div><div><div class="ba-text"><strong>Cierre manual en ERP</strong>Retranscripción de datos</div><div class="ba-time">~20 min + error</div></div></div>
+    </div>
+    <div class="ba-arrow">→</div>
+    <div class="ba-col after">
+      <div class="ba-tag">CON BACORD</div>
+      <div class="ba-item ai d5"><div class="ba-icon">⚡</div><div><div class="ba-text"><strong>Auto-registro desde ERP</strong>Datos del lote ya están — sin anotación</div><div class="ba-time">Automático</div></div></div>
+      <div class="ba-item ai d5"><div class="ba-icon">🔗</div><div><div class="ba-text"><strong>Parámetros integrados</strong>Sensor → BACORD → ERP en tiempo real</div><div class="ba-time">En vivo</div></div></div>
+      <div class="ba-item ai d5"><div class="ba-icon">🚨</div><div><div class="ba-text"><strong>Alerta instantánea</strong>QA ve la desviación en el momento</div><div class="ba-time">0 minutos</div></div></div>
+      <div class="ba-item ai d5"><div class="ba-icon">📲</div><div><div class="ba-text"><strong>Firma desde BACORD</strong>Mobile o escritorio — respuesta al instante</div><div class="ba-time">2 minutos</div></div></div>
+      <div class="ba-item ai d5"><div class="ba-icon">✅</div><div><div class="ba-text"><strong>Cierre automático</strong>ERP actualizado — cero retranscripción</div><div class="ba-time">Automático</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 5: DEMO PRIMERO ═══ -->
+<div class="slide" data-slide="5">
+  <div class="s-demo">
+    <div class="demo-left">
+      <div class="dm-eyebrow ai d1">próximo paso</div>
+      <h2 class="dm-title ai d2">La demo es para <span>que lo vean</span></h2>
+      <p class="dm-desc ai d3">En una hora, con un proceso suyo. Si genera convicción, hablamos piloto. El ritmo lo marcan ustedes.</p>
+      <div class="dm-flow">
+        <div class="dm-step ai d4">
+          <div class="dm-step-num">1</div>
+          <div class="dm-step-text"><strong class="dm-step-title">Elegimos un lote</strong><div class="dm-step-desc">De un proceso real de ustedes — con sus propios parámetros</div></div>
+        </div>
+        <div class="dm-step ai d5">
+          <div class="dm-step-num">2</div>
+          <div class="dm-step-text"><strong class="dm-step-title">Simulamos lo que pasa</strong><div class="dm-step-desc">Inicio, parámetros, desviación, firma, cierre — todo en vivo</div></div>
+        </div>
+        <div class="dm-step ai d6">
+          <div class="dm-step-num">3</div>
+          <div class="dm-step-text"><strong class="dm-step-title">Ustedes ven su proceso</strong><div class="dm-step-desc">Sin traducción. Sin "imaginen que...". Tal cual funcionaría en ustedes.</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="demo-right">
+      <div>
+        <div class="dr2-title ai d1">Objeciones frecuentes</div>
+        <div class="dr2-sub ai d2">Qué preguntan siempre</div>
+      </div>
+      <div class="demo-card dc1 ai d3">
+        <div class="dc-label">Pregunta 1</div>
+        <div class="dc-title">¿Se conecta con nuestro ERP?</div>
+        <div class="dc-desc">Sí. SAP, NAVISION, TraceFood, custom — tenemos APIs para la mayoría. Si el tuyo no está, lo integramos.</div>
+      </div>
+      <div class="demo-card dc2 ai d4">
+        <div class="dc-label">Pregunta 2</div>
+        <div class="dc-title">¿Cuánto tiempo tarda implementar?</div>
+        <div class="dc-desc">Piloto: 4-6 semanas. Integración completa: 3-4 meses según complejidad. Pero el valor se ve desde la semana 1.</div>
+      </div>
+      <div class="demo-card dc3 ai d5">
+        <div class="dc-label">Pregunta 3</div>
+        <div class="dc-title">¿Necesitamos cambiar equipos/procesos?</div>
+        <div class="dc-desc">No. BACORD se adapta a ustedes. Documentan como lo hacen hoy, solo que en vivo y conectado.</div>
+      </div>
+      <div class="demo-objection ai d6">
+        <div class="obj-icon">❓</div>
+        <div class="obj-body">
+          <div class="obj-q">"¿Y si no nos convence?"</div>
+          <div class="obj-a">Sin compromiso. Si después del piloto ven que no es para ustedes, no hay costo más allá de las horas de integración que ya pagaron. Pero los que lo prueban deciden continuar — porque ven el cambio desde el día 1.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SLIDE 6: CIERRE ═══ -->
+<div class="slide" data-slide="6">
+  <div class="s-close">
+    <div class="close-left">
+      <div class="cl-logo ai d1"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 60'%3E%3Ctext x='10' y='45' font-family='Syne,sans-serif' font-size='40' font-weight='800' fill='%23FF6B35'%3EBACORD%3C/text%3E%3C/svg%3E" alt="BACORD"></div>
+      <div class="cl-main">
+        <div class="cl-eyebrow ai d2">Próximos pasos</div>
+        <h2 class="cl-title ai d3">Agendemos<br>el <span>demo</span><br>hoy mismo.</h2>
+        <p class="cl-sub ai d4">Una hora, con un proceso de su industria. Si genera convicción, hablamos de un piloto. El ritmo lo marcan ustedes.</p>
+      </div>
+      <div class="cl-contacts ai d5">
+        <div class="cl-contact"><strong>Equipo BACORD</strong>bacord@zenttra.com</div>
+        <div class="cl-contact"><strong>Zenttra — Más que Transformar</strong>www.zenttra.com</div>
+      </div>
+    </div>
+    <div class="close-right">
+      <div class="cr-title ai d1">Acuerdos de esta reunión</div>
+      <div class="cr-sub ai d2">Completemos juntos — esto queda como resumen para ambos</div>
+      <div class="ns-card g ai d3">
+        <div class="ns-lbl">Fecha propuesta para la demo</div>
+        <input class="ns-input" placeholder="Ej: Semana del 20 de mayo...">
+      </div>
+      <div class="ns-card b ai d4">
+        <div class="ns-lbl">Personas que deberían estar en la demo</div>
+        <input class="ns-input" placeholder="Ej: Director de Calidad + Gerente de Producción...">
+      </div>
+      <div class="ns-card t ai d5">
+        <div class="ns-lbl">Próxima acción concreta</div>
+        <input class="ns-input" placeholder="Ej: Enviar invitación de calendario hoy...">
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /slides -->
+
+<!-- NAV -->
+<nav class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="navigate(-1)" disabled>←</button>
+  <div class="nav-dots" id="navDots"></div>
+  <button class="nav-btn" id="nextBtn" onclick="navigate(1)">→</button>
+  <div class="nav-timer" id="navTimer">1 / 7</div>
+</nav>
+
+<script>
+const LABELS = ["Portada","¿Qué es BACORD?","El costo","Diagnóstico","BACORD en acción","Demo primero","Cierre"];
+const PRESENTER = [
+  {time:"1 min", tips:["Escribe el nombre del cliente antes de compartir pantalla.","Menciona su nombre al abrir — ya estás personalizando."], qs:[]},
+  {time:"3–4 min", tips:["No leas los bullets — cuéntalos como historia.","Énfasis en la integración: 'no solo digitalizamos el papel, nos conectamos con lo que ya tienen'.","Pregunta si ya tienen ERP o equipos conectados — es territorio fértil."], qs:["¿Tienen hoy algún sistema digital para documentar la producción?","¿Su ERP actual está conectado con el piso de producción?","¿Los datos de equipos los transcribe alguien a mano hoy?"]},
+  {time:"2 min", tips:["Deja los números en pantalla. No hables mientras los leen.","Luego pregunta: '¿Les ha pasado algo parecido?' — y escucha.","El 3× más rápido suele resonar con QA; el 80% de desviaciones tardías con producción."], qs:["¿Cuánto tiempo les toma cerrar la documentación de un lote hoy?","¿Cómo se enteran cuando hay una desviación — en el momento o después?"]},
+  {time:"5–7 min", tips:["Haz clic en los pasos DEL CLIENTE — pregunta antes de marcar.","El medidor de riesgo sube en vivo. Deja que lo vean moverse.","Esto es el WOW — que vean su propio proceso reflejado."], qs:["¿En qué paso de este flujo sienten más fricción hoy?","¿Qué pasa cuando hay un error en el registro — cómo lo corrigen?","¿Cuánto tarda en llegar una firma de aprobación cuando el QA no está en planta?","¿Si INVIMA pidiera el lote 342 de hace 6 meses, en cuánto tiempo lo tendrían?"]},
+  {time:"4–5 min", tips:["Conecta cada fila del 'después' con lo que ellos dijeron en el diagnóstico.","'Mencionaron que las firmas los traban — aquí está cómo se ve eso resuelto.'"], qs:["¿Cuál de estas situaciones les genera más impacto operativo?","¿Algo de lo que ven aquí les genera dudas sobre cómo funcionaría en su planta?"]},
+  {time:"3–4 min", tips:["El punto clave: la demo es para entender, no para comprometer.","Explica el flujo natural: demo → piloto → decisión.","Cierra con: '¿Con qué proceso les gustaría que la preparemos?'"], qs:["¿Con qué proceso de su operación les gustaría que preparemos la demo?","¿Quién más del equipo debería verla — TI, producción, calidad?","¿Qué tendría que ver en la demo para que tenga sentido continuar?"]},
+  {time:"3–5 min", tips:["Completa los campos EN VIVO con el cliente — hazlo colaborativo.","No termines sin una fecha concreta o una acción con dueño.","Si no se comprometen hoy: '¿Cuándo tiene sentido retomar esto?'"], qs:[]}
+];
+
+let cur = 0; const total = 7; let ptVisible = false;
+
+document.getElementById("coverDate").textContent = new Date().toLocaleDateString("es-CO",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
+
+const dotsEl = document.getElementById("navDots");
+for(let i=0;i<total;i++){
+  const d=document.createElement("button");
+  d.className="nav-dot"+(i===0?" active":"");
+  d.title=LABELS[i]; d.onclick=()=>goTo(i);
+  dotsEl.appendChild(d);
+}
+
+function goTo(n){
+  const slides=document.querySelectorAll(".slide");
+  slides[cur].classList.remove("active"); slides[cur].classList.add("exit");
+  setTimeout(()=>slides[cur].classList.remove("exit"),480);
+  cur=n; slides[cur].classList.add("active");
+  slides[cur].querySelectorAll(".ai").forEach(el=>{el.style.animation="none";el.offsetHeight;el.style.animation="";});
+  updateNav(); if(ptVisible) updatePresenter();
+}
+function navigate(d){const n=cur+d;if(n>=0&&n<total)goTo(n);}
+function updateNav(){
+  document.getElementById("prevBtn").disabled=cur===0;
+  document.getElementById("nextBtn").disabled=cur===total-1;
+  document.getElementById("navTimer").textContent=(cur+1)+" / "+total;
+  document.querySelectorAll(".nav-dot").forEach((d,i)=>d.classList.toggle("active",i===cur));
+}
+function togglePresenter(){
+  ptVisible=!ptVisible;
+  document.getElementById("ptPanel").classList.toggle("visible",ptVisible);
+  document.getElementById("ptToggle").classList.toggle("on",ptVisible);
+  if(ptVisible) updatePresenter();
+}
+function updatePresenter(){
+  const d=PRESENTER[cur]; 
+  const panel=document.getElementById("ptPanel");
+  let h=`<h4>${LABELS[cur]}</h4><div class="pt-badge">⏱ ${d.time}</div>`;
+  d.tips.forEach(t=>{h+=`<div class="pt-tip">${t}</div>`;});
+  if(d.qs.length){h+=`<div style="font-size:10px;color:var(--orange);letter-spacing:.08em;text-transform:uppercase;margin:10px 0 7px;font-family:'DM Mono',monospace">Preguntas sugeridas</div>`;
+    d.qs.forEach(q=>{h+=`<div class="pt-q">${q}</div>`;});}
+  panel.innerHTML=h;
+}
+
+let flagged=0;
+function toggleStep(el){
+  el.classList.toggle("flagged");
+  flagged=document.querySelectorAll(".ps.flagged").length;
+  const pct=Math.min(12+flagged*14,95);
+  document.getElementById("riskFill").style.width=pct+"%";
+  const lvl=["Bajo","Moderado","Elevado","Alto","Crítico","Crítico"];
+  const sub=["— sin puntos críticos identificados","— hay puntos que gestionar","— exposición significativa","— riesgo real de observaciones BPM","— requiere acción inmediata","— requiere acción inmediata"];
+  document.getElementById("riskVal").innerHTML=lvl[Math.min(flagged,5)]+` <span>${sub[Math.min(flagged,5)]}</span>`;
+}
+function togglePain(el){el.classList.toggle("active");}
+document.addEventListener("keydown",e=>{
+  if(e.target.tagName==="INPUT") return;
+  if(e.key==="ArrowRight"||e.key===" ") navigate(1);
+  if(e.key==="ArrowLeft") navigate(-1);
+  if(e.key==="p"||e.key==="P") togglePresenter();
+});
+</script>
+</body>
+</html>
